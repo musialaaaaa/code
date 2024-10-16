@@ -107,7 +107,86 @@ svg{
 width: 3.5vh;
 
 }
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        html, body {
+            overflow: hidden;
+            background-color: #000 !important;
+            height: 100%;
+        }
+
+        body {
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .webgl {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            top: 0;
+            left: 0;
+            outline: none;
+        }
+
+        .message {
+            position: absolute;
+            bottom: 10vh;
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ff69b4;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+            animation: glow 1.5s ease-in-out infinite alternate;
+            cursor: pointer;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+
+        /* Hover effect */
+        .message:hover {
+            color: #ff1493;
+            transform: scale(1.1);
+        }
+
+        /* Animation for glowing text */
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px #ff69b4, 0 0 20px #ff69b4, 0 0 30px #ff69b4, 0 0 40px #ff69b4;
+            }
+            to {
+                text-shadow: 0 0 20px #ff1493, 0 0 30px #ff1493, 0 0 40px #ff1493, 0 0 50px #ff1493;
+            }
+        }
+
+        /* Center the heart model */
+        button {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            height: 12vh;
+            width: 12vh;
+            transform: translateY(2vh);
+            right: 0;
+            margin: auto;
+            -webkit-appearance: none;
+            background: transparent;
+            color: inherit;
+            border: none;
+            cursor: pointer;
+        }
+
+        svg {
+            width: 3.5vh;
+        }
 </style>
 
 <script>
@@ -127,7 +206,85 @@ window.parent.postMessage("resize", "*");
 </script>
 
 </head>
+<body translate="no">
 
+    <!-- Canvas for WebGL rendering -->
+    <canvas class="webgl" data-engine="three.js r135"></canvas>
+
+    <!-- Text Message Below the Heart -->
+    <div class="message" id="birthday-message">Happy birthday Binnn iuu</div>
+
+    <button id="play-music" type="button" aria-label="Play music">
+        <svg fill="currentColor" viewBox="0 0 512 512" width="100" title="music">
+            <!-- <path d="..."/> -->
+        </svg>
+    </button>
+
+    <script type="module">
+        import * as THREE from "https://cdn.skypack.dev/three@0.135.0";
+        import { gsap } from "https://cdn.skypack.dev/gsap@3.8.0";
+        import { GLTFLoader } from "https://cdn.skypack.dev/three@0.135.0/examples/jsm/loaders/GLTFLoader";
+
+        class World {
+            constructor({ canvas, cameraPosition }) {
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x000000);
+
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+                this.camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+                this.scene.add(this.camera);
+
+                this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+                this.addHeart();
+                this.render();
+                this.listenToResize();
+            }
+
+            render() {
+                this.renderer.render(this.scene, this.camera);
+                requestAnimationFrame(this.render.bind(this));
+            }
+
+            addHeart() {
+                const loader = new GLTFLoader();
+                loader.load("https://assets.codepen.io/74321/heart.glb", (gltf) => {
+                    this.model = gltf.scene;
+                    this.model.scale.set(0.01, 0.01, 0.01);
+                    this.scene.add(this.model);
+
+                    gsap.to(this.model.scale, {
+                        x: 0.35,
+                        y: 0.35,
+                        z: 0.35,
+                        duration: 1.5,
+                        ease: "Elastic.easeOut",
+                    });
+                });
+            }
+
+            listenToResize() {
+                window.addEventListener("resize", () => {
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                });
+            }
+        }
+
+        const world = new World({
+            canvas: document.querySelector("canvas.webgl"),
+            cameraPosition: { x: 0, y: 0, z: 4.5 },
+        });
+
+        // Add click action on the text
+        document.getElementById('birthday-message').addEventListener('click', function() {
+            alert('Happy Birthday Binn! From Bunn with luv <3 !');
+        });
+
+    </script>
 <body translate="no">
 
 <canvas class="webgl" data-engine="three.js r135" width="682" height="157" style="width: 682px; height: 157px;"></canvas>
@@ -301,6 +458,21 @@ gl_FragColor = vec4(texture * color * (strength + .3), 1.);
 /* Poly Heart model by Quaternius [CC0] (https://creativecommons.org/publicdomain/zero/1.0/) via Poly Pizza (https://poly.pizza/m/1yCRUwFnwX)
 
 */
+const imageUrls = [
+    "https://imgur.com/q68QTgH",
+    "https://imgur.com/q68QTgH",
+    "https://imgur.com/q68QTgH"
+];
+
+let currentImageIndex = 0;
+
+function changeImage() {
+    currentImageIndex = (currentImageIndex + 1) % imageUrls.length;
+    this.heartMaterial.uniforms.uTex.value = new THREE.TextureLoader().load(imageUrls[currentImageIndex]);
+}
+
+// Cứ sau mỗi 5 giây, đổi ảnh
+setInterval(changeImage, 5000);
 
 import * as THREE from "https://cdn.skypack.dev/three@0.135.0";
 
@@ -576,7 +748,7 @@ uTex: {
 
 value: new THREE.TextureLoader().load(
 
-"https://assets.codepen.io/74321/heart.png") } },
+"https://imgur.com/q68QTgH") } },
 
 depthWrite: false,
 
@@ -1001,4 +1173,3 @@ world.loop();
 </body>
 
 </html>
-
